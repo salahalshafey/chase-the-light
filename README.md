@@ -4,7 +4,7 @@ A 3D game that teaches special relativity to kids and adults. Six short missions
 
 ![The mission menu](docs/menu.jpg)
 
-**Play it:** `https://salahalshafey.github.io/chase-the-light/` 
+**Play it:** [salahalshafey.github.io/chase-the-light](https://salahalshafey.github.io/chase-the-light/)
 
 ## What you do in it
 
