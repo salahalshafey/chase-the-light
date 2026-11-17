@@ -13,6 +13,7 @@ const MISSIONS = [
   { id: 'm6', steps: 3, make: a => new Train(a) },
   { id: 'lab', steps: 0, make: a => new Lab(a) }
 ];
+const ALL_STARS = MISSIONS.reduce((n, m) => n + m.steps, 0);     // 18
 const ICONS = {
   m1: '<circle cx="22" cy="24" r="15"/><path d="M22 14v10l7 4M16 4h12"/>',
   m2: '<circle cx="9" cy="33" r="5"/><path d="M15 29C22 14 30 12 37 11"/><path d="M36 4l2 5 5 1-4 3 1 5-4-3-5 3 2-5-4-4 5 0z"/>',
@@ -97,6 +98,13 @@ const App = {
     $('m-menu').onclick = () => { Sfx.click(); $('modal').hidden = true; this.menu(); };
     $('m-again').onclick = () => { $('modal').hidden = true; this.open(this.def, 0); };
     $('m-next').onclick = () => { $('modal').hidden = true; const i = MISSIONS.indexOf(this.def); this.open(MISSIONS[i + 1] || MISSIONS[0], 0); };
+    $('veil-lesson').onclick = () => this.showLesson();
+    $('veil-enter').onclick = () => this.enter();
+    $('ls-enter').onclick = () => this.enter();
+    $('party-go').onclick = () => { Sfx.click(); this.closeParty(); if (!$('modal').hidden) $('m-next').focus(); };
+    $('party-lab').onclick = () => { Sfx.click(); this.closeParty(); $('modal').hidden = true; this.open(MISSIONS.find(m => m.id === 'lab'), 0); };
+    $('hero-badge').onclick = () => { Sfx.init(); this.party(); };
+    window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('party').hidden) $('party-go').click(); });
   },
 
   // ----- language -----
@@ -110,13 +118,17 @@ const App = {
     $('sp-of').textContent = t('ofLight'); $('top-stars').title = t('starsTitle');
     this.renderCards(); this.renderConsole(); this.renderSpeed(); this.renderSound(); this.renderIntro(); this.renderVeil();
     if (!$('modal').hidden) this.summary();
+    if (!$('party').hidden) this.renderParty();
     if (this.mission && this.mission.onLang) this.mission.onLang();
     this.save(); this.applyView();
   },
   renderSound() { const b = $('btn-sound'); b.innerHTML = SPEAKER(!Sfx.muted); b.title = t(Sfx.muted ? 'soundOff' : 'soundOn'); b.setAttribute('aria-label', b.title); },
+  totalStars() { return MISSIONS.reduce((n, m) => n + (this.stars[m.id] || 0), 0); },
   renderCards() {
-    const total = MISSIONS.reduce((n, m) => n + (this.stars[m.id] || 0), 0);
-    $('top-stars').innerHTML = starSvg(true) + '<span>' + total + '/18</span>';
+    const total = this.totalStars(), all = total >= ALL_STARS, badge = $('hero-badge');
+    $('top-stars').innerHTML = starSvg(true) + '<span>' + total + '/' + ALL_STARS + '</span>';
+    $('top-stars').classList.toggle('all', all);
+    badge.hidden = !all; badge.innerHTML = starSvg(true) + '<span>' + t('badge', { n: ALL_STARS }) + '</span>'; badge.title = t('badgeTip');
     $('cards').innerHTML = MISSIONS.map((m, i) => {
       const got = this.stars[m.id] || 0;
       return '<button type="button" class="card' + (m.steps ? '' : ' lab') + '" data-id="' + m.id + '">' +
@@ -138,12 +150,15 @@ const App = {
     this.mission = mission; this.settle = 6;
   },
   menu() {
-    this.def = null; this.awaitNext = false; Sfx.ambient(true);
+    this.def = null; this.awaitNext = false; this.paused = false; Sfx.ambient(true);
     $('app').dataset.screen = 'menu';
     this.swap(null);
     this.mission = new Cockpit(this, { mode: 'ambient' });
     this.renderCards(); this.applyView();
+    if (this.partyDue) { this.partyDue = false; setTimeout(() => this.party(), 400); }   // the last star was won, but the player left before the summary
   },
+  // Freeze the scene behind a curtain or dialog: no motion, no ticking, no engine. The last frame stays on screen.
+  pause() { this.paused = true; Sfx.engine(0); },
   // The opening screen. It paints the big textures behind a progress bar, then waits for one tap:
   // browsers only allow sound after a tap, so that tap is also what starts the music.
   intro() {
@@ -173,12 +188,15 @@ const App = {
     $('intro-eyebrow').textContent = t('eyebrow'); $('intro-title').textContent = t('title'); $('intro-lang').textContent = t('langBtn');
     $('intro-status').textContent = t(this.introKey || 'introL1'); $('intro-go').textContent = t('introStart'); $('intro-note').textContent = this.introReady ? t('introNote') : '';
   },
-  // Opening a mission: a curtain with a fact to read drops first, the scene is built and drawn once behind it, then the curtain lifts.
+  // Opening a mission: a curtain with a fact to read drops first, and the scene is built and drawn once behind it.
+  // For the free lab the curtain then lifts by itself. For a mission it waits, with the scene held still, while the player
+  // chooses between the lesson (js/lessons.js) and going straight in.
   open(def, step) {
     if (window.__q !== undefined) return this.build(def, step);          // automated tests build it straight away
     if (this.opening) return;
-    this.opening = true;
-    const veil = $('veil'), t0 = performance.now(), first = !this.seen[def.id];
+    this.opening = true; this.veilChoice = false;
+    const veil = $('veil'), t0 = performance.now(), first = !this.seen[def.id], ask = !!def.steps && Lesson.has(def.id);
+    Lesson.stop(); veil.classList.remove('lesson-on'); $('lesson').hidden = true; $('veil-intro').hidden = false;
     this.veilDef = def; this.veilKey = 'ld1'; this.renderVeil(); veil.classList.add('on');
     const frames = (n, fn) => n ? requestAnimationFrame(() => frames(n - 1, fn)) : fn();
     setTimeout(() => {
@@ -187,17 +205,40 @@ const App = {
       // the render loop draws the new scene on the next frame, which is where shaders compile; wait for that frame to finish
       frames(3, () => {
         this.veilKey = 'ld3'; this.renderVeil();
-        setTimeout(() => { veil.classList.remove('on'); this.opening = false; this.settle = 6; }, Math.max(150, (first ? 1500 : 500) - (performance.now() - t0)));
+        setTimeout(() => {
+          this.opening = false; this.settle = 6;
+          if (!ask) return veil.classList.remove('on');
+          this.pause(); this.veilChoice = true; this.renderVeil(); $('veil-enter').focus();
+        }, Math.max(150, (ask ? 700 : first ? 1500 : 500) - (performance.now() - t0)));
       });
     }, 230);
   },
   renderVeil() {
     const d = this.veilDef; if (!d) return;
+    const choose = !!this.veilChoice;
     $('veil-tag').textContent = t(d.id + 'tag'); $('veil-title').textContent = t(d.id);
-    $('veil-fact').innerHTML = '<b>' + t('factH') + '</b> ' + t('fact_' + d.id); $('veil-status').textContent = t(this.veilKey);
+    $('veil-fact').innerHTML = '<b>' + t('factH') + '</b> ' + t('fact_' + d.id);
+    $('veil-status').textContent = choose ? '' : t(this.veilKey); $('veil-status').hidden = choose;
+    $('veil-actions').hidden = !choose;
+    $('veil-lesson').textContent = t('lesSee'); $('veil-enter').textContent = t('lesEnter'); $('ls-enter').textContent = t('lesEnter');
+    if (Lesson.active) Lesson.render();
+  },
+  showLesson() {
+    if (!this.veilChoice) return;
+    Sfx.click();
+    $('veil-intro').hidden = true; $('lesson').hidden = false;
+    $('veil').classList.add('lesson-on'); $('veil').scrollTop = 0;
+    Lesson.start(this.veilDef.id);
+    $('ls-next').focus();
+  },
+  enter() {                                        // lift the curtain and let the mission run
+    if (!this.veilChoice) return;
+    this.veilChoice = false; Sfx.click(); Lesson.stop();
+    $('veil').classList.remove('on');
+    this.paused = false; this.settle = 6;
   },
   build(def, step) {
-    this.def = def; this.step = step; this.awaitNext = false; Sfx.ambient(false);
+    this.def = def; this.step = step; this.awaitNext = false; this.paused = false; Sfx.ambient(false);
     $('app').dataset.screen = 'play';
     $('top-title').textContent = t(def.id);
     this.st = { task: null, primary: null, quiz: null, extra: [], feedback: null, speed: { show: false } };
@@ -225,7 +266,23 @@ const App = {
     $('m-kid').textContent = t(id + 'kid'); $('m-curious-h').textContent = t('curiousH'); $('m-curious').innerHTML = t(id + 'cur');
     $('m-formula').textContent = t(id + 'f');
     $('m-menu').textContent = t('mMenu'); $('m-again').textContent = t('mAgain'); $('m-next').textContent = t('mNext');
-    if (open) { $('modal').hidden = false; $('m-next').focus(); Sfx.engine(0); Sfx.fanfare(); }
+    if (open) {
+      this.pause(); $('modal').hidden = false; $('m-next').focus();
+      if (this.partyDue) { this.partyDue = false; this.party(); } else Sfx.fanfare();
+    }
+  },
+  // ----- every star collected -----
+  party() {
+    this.renderParty(); $('party').hidden = false;
+    Celebrate.start($('party-fx')); Sfx.celebrate();
+    $('party-go').focus();
+  },
+  closeParty() { Celebrate.stop(); $('party').hidden = true; },
+  renderParty() {
+    $('party-eyebrow').textContent = t('partyEyebrow', { n: ALL_STARS }); $('party-title').textContent = t('partyTitle');
+    $('party-text').textContent = t('partyText'); $('party-list-h').textContent = t('partyListH');
+    $('party-list').innerHTML = MISSIONS.filter(m => m.steps).map((m, i) => '<li style="--i:' + i + '">' + icon(m.id) + '<span>' + t(m.id + 'tag') + '</span></li>').join('');
+    $('party-lab').textContent = t('partyLab'); $('party-go').textContent = t('partyGo');
   },
 
   // ----- what missions call -----
@@ -240,7 +297,9 @@ const App = {
   fail(key, vars) { this.st.feedback = { ok: false, key, vars }; this.renderConsole(); Sfx.bad(); },
   win(key, vars) {
     this.st.feedback = { ok: true, key, vars };
+    const before = this.totalStars();
     this.stars[this.def.id] = Math.max(this.stars[this.def.id] || 0, this.step + 1);
+    if (before < ALL_STARS && this.totalStars() >= ALL_STARS) this.partyDue = true;     // celebrated when the summary opens
     this.awaitNext = true; this.save(); this.renderCards(); this.renderConsole(); this.renderSpeed(); Sfx.good();
   },
   setBeta(b, silent, fromUser) {
@@ -360,13 +419,23 @@ const App = {
     }
     cam.setViewOffset(W, H, W / 2 - (x0 + x1) / 2, H / 2 - (y0 + y1) / 2, W, H);
     cam.updateProjectionMatrix();
+    this.redraw = true;
   },
 
   frame(dt) {
     const m = this.mission; if (!m) return;
+    if (this.paused) { if (this.redraw) this.draw(m, 0); return; }      // held still: only redraw if a resize wiped the canvas
     KIT.time.value += dt;
-    KIT.pix.value = this.renderer.getPixelRatio();
     m.update(dt);
+    this.draw(m, dt);
+    if (!this.def && m.ambientBeta !== undefined) {
+      $('cruise-fill').style.width = (m.ambientBeta * 100).toFixed(1) + '%';
+      $('cruise-val').textContent = Math.round(m.ambientBeta * 100) + '%';
+    }
+  },
+  draw(m, dt) {
+    this.redraw = false;
+    KIT.pix.value = this.renderer.getPixelRatio();
     if (this.post && this.quality < 2) { this.post.render.scene = m.scene; this.post.render.camera = m.camera; this.post.composer.render(dt); }
     else this.renderer.render(m.scene, m.camera);
     // pin labels to their 3D anchors
@@ -377,10 +446,6 @@ const App = {
       const vis = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.15 && Math.abs(v.y) < 1.15 && L.html;
       L.el.style.display = vis ? '' : 'none';
       if (vis) L.el.style.transform = 'translate(' + ((v.x * 0.5 + 0.5) * W).toFixed(1) + 'px,' + ((-v.y * 0.5 + 0.5) * H).toFixed(1) + 'px) translate(-50%,-50%)';
-    }
-    if (!this.def && m.ambientBeta !== undefined) {
-      $('cruise-fill').style.width = (m.ambientBeta * 100).toFixed(1) + '%';
-      $('cruise-val').textContent = Math.round(m.ambientBeta * 100) + '%';
     }
   }
 };

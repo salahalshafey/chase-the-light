@@ -50,6 +50,15 @@ const Sfx = {
   good() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.32, { v: 0.14, delay: i * 0.085, type: 'triangle' })); this.tone(2093, 0.5, { v: 0.05, delay: 0.34 }); },
   bad() { this.tone(220, 0.16, { v: 0.14, to: 180, type: 'sawtooth' }); this.tone(165, 0.26, { v: 0.14, to: 120, type: 'sawtooth', delay: 0.15 }); },
   fanfare() { [392, 523, 659, 784, 659, 784, 1047].forEach((f, i) => this.tone(f, i === 6 ? 0.9 : 0.2, { v: 0.14, delay: i * 0.12, type: 'triangle' })); },
+  // all 18 stars: a rising run, a held chord and a shower of sparkles
+  celebrate() {
+    const run = [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.36], [784, 0.54], [1047, 0.66], [1319, 0.84], [1568, 1.02]];
+    run.forEach(([f, d], i) => this.tone(f, i === run.length - 1 ? 1.5 : 0.26, { v: 0.13, delay: d, type: 'triangle' }));
+    [523, 659, 784, 1047].forEach(f => this.tone(f, 2.4, { v: 0.05, delay: 1.02, attack: 0.06 }));
+    for (let i = 0; i < 14; i++) this.tone(2200 + Math.random() * 2400, 0.25, { v: 0.025, delay: 1.1 + i * 0.11 });
+    this.noise(0.7, { v: 0.08, f: 6000, type: 'highpass', delay: 1.02, attack: 0.05 });
+  },
+  pop() { this.noise(0.5, { v: 0.09, f: 3000, to: 500, type: 'bandpass', q: 0.8 }); this.tone(1800 + Math.random() * 1400, 0.3, { v: 0.02, delay: 0.05 }); },   // a far-off firework
   whoosh(t = 0.7, up = true) { this.noise(t, { v: 0.22, f: up ? 300 : 3000, to: up ? 3200 : 260, type: 'bandpass', q: 1.2, attack: t * 0.4 }); },
   launch(t = 4) { this.noise(t, { v: 0.3, f: 140, to: 900, attack: 0.5 }); this.tone(55, t, { v: 0.12, to: 150, type: 'sawtooth', attack: 0.6 }); },
   arrive() { this.tone(880, 0.5, { v: 0.12 }); this.tone(1320, 0.7, { v: 0.1, delay: 0.12 }); },

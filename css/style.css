@@ -237,6 +237,54 @@ html[dir=rtl] .load .bar i{transform-origin:right center;background:linear-gradi
 #intro-go{margin-top:14px;min-height:60px;padding:14px 38px;font-size:26px;animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
 @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
 .note{margin:0;font-size:13px;color:var(--ink-dim);min-height:1.5em}
+/* the choice on the curtain once a mission is ready, and the lesson that can follow it */
+.veil-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;animation:rise .35s ease-out}
+.veil-actions .ghost{padding:11px 24px;font-size:17px}
+.veil-actions .primary{padding:12px 28px}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#veil.lesson-on{place-items:normal;grid-template-columns:minmax(0,1fr);overflow-y:auto}
+.lesson{margin:auto;width:min(700px,100%);min-width:0;display:flex;flex-direction:column;gap:11px;padding:20px 22px;border-radius:26px;
+  background:#10163f;border:1px solid var(--line);text-align:start;animation:rise .35s ease-out}
+.lesson h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,36px);line-height:1.15;margin:0;color:var(--light);text-wrap:balance}
+#ls-canvas{display:block;width:100%;aspect-ratio:2/1;border-radius:18px;background:#070b24;border:1px solid var(--line)}
+#ls-text{margin:0;font-size:16px;line-height:1.65;text-wrap:pretty;min-height:4.95em}
+.ls-speed{display:flex;flex-direction:column;gap:2px;padding:8px 12px 4px;border-radius:14px;background:rgba(255,255,255,.05)}
+.ls-speed-read{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--ink-dim)}
+.ls-speed-read b{font-size:15px;color:var(--light)}
+.ls-speed input{direction:ltr}
+.ls-nav{display:flex;align-items:center;gap:10px}
+.ls-dots{flex:1;display:flex;justify-content:center;gap:8px}
+.ls-dots button{width:10px;height:10px;padding:0;border:0;border-radius:6px;background:rgba(255,255,255,.22);transition:width .2s,background .2s}
+.ls-dots button[aria-current]{width:26px;background:var(--light)}
+#ls-enter{align-self:center;min-width:min(300px,100%)}
+
+/* every star collected */
+#party{position:absolute;inset:0;z-index:12;display:grid;grid-template-columns:minmax(0,1fr);padding:16px;overflow-y:auto;
+  background:radial-gradient(ellipse at 50% 40%,rgba(42,36,96,.92),rgba(5,7,26,.94) 70%)}
+#party-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.party-box{margin:auto;position:relative;width:min(600px,100%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;
+  padding:26px 24px 22px;border-radius:28px;background:#10163f;border:1px solid rgba(255,216,74,.5);
+  box-shadow:0 0 0 6px rgba(255,216,74,.06),0 0 90px rgba(255,216,74,.22);animation:pop .55s cubic-bezier(.2,1.5,.4,1)}
+.trophy{position:relative;width:112px;height:112px;display:grid;place-items:center}
+.trophy i{position:absolute;inset:-28px;border-radius:50%;background:repeating-conic-gradient(rgba(255,216,74,.34) 0 10deg,transparent 10deg 30deg);
+  -webkit-mask:radial-gradient(circle,#000 25%,transparent 70%);mask:radial-gradient(circle,#000 25%,transparent 70%);animation:spin 14s linear infinite}
+.trophy svg{position:relative;width:96px;height:96px;color:var(--light);filter:drop-shadow(0 0 18px rgba(255,216,74,.8));animation:breathe 1.6s ease-in-out infinite alternate}
+.party-box h2{font-family:var(--display);font-weight:400;font-size:clamp(34px,6vw,50px);line-height:1.15;margin:0;color:var(--light);text-wrap:balance}
+.party-box p{margin:0;max-width:52ch;text-wrap:pretty}
+.party-box h3{margin:6px 0 0;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--earth);font-weight:600}
+html[dir=rtl] .party-box h3{letter-spacing:0;font-size:14px}
+.party-list{list-style:none;margin:0;padding:0;width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.party-list li{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line);
+  font-size:13.5px;text-align:start;animation:rise .4s ease-out both;animation-delay:calc(var(--i) * 90ms + .35s)}
+.party-list svg.icon{width:26px;height:26px;flex:none;color:var(--light)}
+.party-box .m-actions{justify-content:center}
+#top-stars.all{text-shadow:0 0 12px rgba(255,216,74,.8)}
+#top-stars.all svg{filter:drop-shadow(0 0 6px rgba(255,216,74,.9))}
+.badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 14px;border-radius:99px;
+  border:1px solid rgba(255,216,74,.5);background:rgba(255,216,74,.12);color:var(--light);font-weight:600;font-size:14px}
+.badge svg{width:18px;height:18px}
+.badge:hover{background:rgba(255,216,74,.22)}
+
 #nogl{position:absolute;inset:0;z-index:20;display:grid;place-items:center;padding:24px;text-align:center;background:var(--night);font-size:17px}
 
 @media (max-width:760px){
@@ -250,8 +298,15 @@ html[dir=rtl] .load .bar i{transform-origin:right center;background:linear-gradi
   .guide p{font-size:14.5px}
   .label{font-size:11.5px;padding:2px 7px}
   #c-readouts dd{font-size:15px}
+  #veil{padding:12px}
+  .lesson{padding:14px;gap:9px;border-radius:20px}
+  #ls-canvas{border-radius:14px}
+  #ls-text{font-size:14.5px;min-height:0}
+  .veil-actions{flex-direction:column;align-items:stretch;width:min(320px,100%)}
+  .party-box{padding:22px 16px 18px}
 }
 @media (prefers-reduced-motion:reduce){
   .foton{animation:none}.card{transition:none}
   .orbit i{animation-duration:6s}.orbit u{animation-duration:9s}.orbit b,#intro-go{animation:none}
+  .veil-actions,.lesson,.party-box,.party-list li,.trophy i,.trophy svg{animation:none}
 }

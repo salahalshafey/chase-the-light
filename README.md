@@ -8,7 +8,7 @@ A 3D game that teaches special relativity to kids and adults. Six short missions
 
 ## What you do in it
 
-Each mission has three challenges and ends with a short explanation for children, plus a "for curious minds" note with the formula.
+Before each mission you can watch a short lesson: three animated slides that show the idea the mission is built on, some with a speed slider to try it out. Each mission then has three challenges and ends with a short explanation for children, plus a "for curious minds" note with the formula. Collect all 18 stars and the game throws you a party.
 
 | # | Mission | What it teaches | What you do |
 |---|---------|-----------------|-------------|
@@ -41,7 +41,8 @@ The scenery rebuilds itself around the vehicle: a night road, a railway, a cloud
 - In the cockpit mission and the lab's inside view, drag the picture to look around.
 - The top bar has the language switch (Arabic is the default), the sound button, and the star count. Stars and the chosen language are saved in the browser.
 - The game opens on a short loading screen with a **Start** button. Browsers do not let a page play sound until you tap something, so the music begins when you press it.
-- Each mission opens behind a brief loading curtain with a "did you know?" fact, so the scene is ready before you see it.
+- Each mission opens behind a loading curtain with a "did you know?" fact, so the scene is ready before you see it. When it is ready, choose **See the lesson** or **Enter the mission**. In the lesson, use Back and Next (or the arrow keys); you can enter the mission from any slide.
+- While the curtain or the end-of-mission summary is open, the scene behind it is paused: clocks stop ticking and the engine goes quiet.
 
 ## Run it on your own computer
 
@@ -76,6 +77,8 @@ js/
     interiors.js      the view from inside each vehicle
     journey.js        the lab's 3D scene and its two cameras
     lab.js            the lab's control panel and results
+  lessons.js          the illustrated lesson before each mission (2D canvas animations)
+  celebrate.js        confetti and fireworks for collecting all 18 stars
   app.js              menu, mission flow, labels, saving, render loop (loaded last)
 vendor/three/         Three.js r128 and its bloom add-ons (MIT licence)
 tests/physics.test.js checks the formulas against the textbook
@@ -106,6 +109,7 @@ Scenery speed on screen is compressed (a logarithmic scale) so that a car and a 
 ## Changing things
 
 - **Text or translation:** edit `js/strings.js`. Each entry is `key: ['English', 'Arabic']`.
+- **A lesson slide:** the words are `l_<mission>_<n>h` (heading) and `l_<mission>_<n>` in `js/strings.js`; the drawing is the matching entry in `SLIDES` in `js/lessons.js`.
 - **A new destination:** add an entry to `DESTS` in `js/lab/destinations.js` with its distance in light-seconds and a function that builds its model, then add its name to `js/strings.js`.
 - **A new vehicle:** add a model and an entry in `VEHICLES` in `js/lab/vehicles.js`, and an interior in `js/lab/interiors.js`.
 - **Sounds:** each effect is one line in `js/audio.js`.
@@ -147,6 +151,8 @@ The game's code is released under the [MIT licence](LICENSE): anyone may use, co
 4. **مرآب الفضاء:** انكماش الطول.
 5. **ضوء أحمر، ضوء أخضر:** انزياح دوبلر وزيغ الضوء.
 6. **قطار البرق:** نسبية التزامن.
+
+وقبل كل مهمة يمكنك مشاهدة درس قصير من ثلاث شرائح متحركة يشرح الفكرة العلمية للمهمة، ثم الدخول إليها. وحين تجمع النجوم الـ 18 كلها تحتفل معك اللعبة.
 
 وفي **المختبر الحر** تختار ما الذي يتحرك (سيارة، قطار سريع، طائرة، محطة الفضاء، مسبار باركر، صاروخ) وإلى أين يتجه (من القمر إلى مجرّة أندروميدا)، وتكتب أي سرعة، ثم ترى من الخارج أو من داخل المركبة ما تفعله النسبية بالزمن والطول واللون.
 
